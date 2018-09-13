@@ -1,0 +1,17 @@
+---
+- become: True
+  block:
+
+  - name: Assert that the password hashes are set
+    assert:
+      that:
+        - "ksdef_root_pwhash != ''"
+        - "ksdef_ansible_pwhash != ''"
+
+  - name: Render kickstart files
+    template:
+      src: "{{ item.template|default('centos7_basic.ks.j2')}}"
+      dest: "{{ item.path }}"
+      owner: root
+      mode: 0644
+    loop: "{{ kickstart_files_list }}"

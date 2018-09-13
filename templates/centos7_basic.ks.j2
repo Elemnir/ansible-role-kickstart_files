@@ -1,0 +1,100 @@
+#================================#
+# Core Kickstart Config
+#================================#
+install
+skipx
+text
+reboot
+
+lang en_US.UTF-8
+keyboard us
+
+services --enabled="chronyd"
+timezone {{ item.timezone|default(ksdef_timezone) }}
+
+network --onboot yes --bootproto dhcp
+{{ item.install_line | default(ksdef_install_line) }}
+
+{% if 'repos' in item -%}
+  {% for line in item.repos -%}
+    {{ line }}
+  {% endfor %}
+{% else -%}
+  {% for line in ksdef_repos -%}
+    {{ line }}
+  {% endfor %}
+{% endif %}
+
+#================================#
+# Disk Config
+#================================#
+bootloader --location=mbr --append=" crashkernel=auto"
+clearpart --all --initlabel
+{% if 'partitions' in item -%}
+  {% for line in item.partitions -%}
+    {{ line }}
+  {% endfor %}
+{% else -%}
+  {% for line in ksdef_partitions -%}
+    {{ line }}
+  {% endfor %}
+{% endif %}
+
+#================================#
+# User Config
+#================================#
+auth --enableshadow --passalgo=sha512
+rootpw --iscrypted {{ item.root_pwhash|default(ksdef_root_pwhash) }}
+user --groups=wheel --name=ansible --password={{ item.ansible_pwhash|default(ksdef_ansible_pwhash) }} --iscrypted --gecos="ansible"
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end
+
+#================================#
+# Package Installation
+#================================#
+%packages
+@core
+chrony
+kexec-tools
+{% if 'packages' in item -%}
+  {% for line in item.packages -%}
+    {{ line }}
+  {% endfor %}
+{% else -%}
+  {% for line in ksdef_packages -%}
+    {{ line }}
+  {% endfor %}
+{% endif %}
+
+%end
+
+#================================#
+# Post Installation
+#================================#
+%post
+
+cat <<EOF > /etc/sudoers.d/ansible
+Defaults:ansible !requiretty
+
+ansible ALL=(ALL:ALL) NOPASSWD:ALL
+EOF
+
+mkdir /home/ansible/.ssh
+
+cat <<EOF > /home/ansible/.ssh/authorized_keys
+{% if 'pubkey_file' in item -%}
+  {{ lookup('file', item.pubkey_file) }}
+{% else -%}
+  {{ lookup('file', ksdef_pubkey_file) }}
+{% endif %}
+EOF
+
+chmod 700 /home/ansible/.ssh
+chown -R ansible:wheel /home/ansible/.ssh
+
+%end
+

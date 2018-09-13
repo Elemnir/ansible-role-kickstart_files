@@ -1,0 +1,21 @@
+---
+
+ksdef_timezone: "America/New_York"
+
+ksdef_install_line: "url --url=\"http://vault.centos.org/7.4.1708/os/x86_64/\""
+
+ksdef_repos: []
+
+ksdef_partitions: 
+    - "autopart --type=lvm"
+
+ksdef_packages: []
+
+ksdef_pubkey_file: "keys/ansible_rsa.pub"
+
+ksdef_root_pwhash: ""
+
+ksdef_ansible_pwhash: ""
+
+kickstart_files_list:
+    - path: "test.ks"
