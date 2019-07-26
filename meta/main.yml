@@ -2,6 +2,7 @@
 dependencies: []
 
 galaxy_info:
+  role_name: kickstart_files
   author: Adam Howard
   description: Renders template-ized kickstart files.
   license: "license (BSD)"
